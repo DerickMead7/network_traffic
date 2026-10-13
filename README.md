@@ -1,42 +1,78 @@
-SOC pipeline Lab: Suricata, ThreatFox & Zabbix
+# SOC Pipeline Lab: Suricata, ThreatFox & Zabbix
 
-Este projeto é um laboratório completo de **Security Operations Center (SOC)** construído para monitoramento de rede, ingestão de Cyber Threat Intelligence (CTI) e geração de alertas em tempo real. Ele integra um IDS de rede com inteligência de ameaças global e um dashboard de monitoramento executivo.
+Este repositório contém a implementação de um laboratório de Security Operations Center (SOC) focado em monitoramento de rede, ingestão de Cyber Threat Intelligence (CTI) e geração de alertas em tempo real.
 
-##Arquitetura do Projeto
+## Arquitetura do Projeto
 
-O pipeline funciona de ponta a ponta cruzando tráfego local com indicadores de comprometimento (IoCs) ativos no mundo:
+O pipeline de detecção atua ponta a ponta e é composto por quatro camadas principais:
 
-1. **Suricata (Network IDS):** Escuta a placa de rede em tempo real e estrutura os eventos de tráfego em logs no formato JSON (`eve.json`).
-2. **ThreatFox API (Abuse.ch):** Fonte de Threat Intelligence. O sistema se autentica na API e consome feeds de IPs e domínios maliciosos (Botnets, C&C, Malware).
-3. **Motor de Correlação (Python & Pandas):** Script que atua como o "cérebro" do pipeline. Ele cruza o tráfego de rede capturado pelo Suricata com a base de IoCs da ThreatFox.
-4. **Zabbix & Docker:** Servidor de monitoramento rodando em containers. Recebe os alertas validados via Zabbix Agent e exibe os incidentes num dashboard executivo.
+1. **Suricata (Network IDS):** Monitoramento de tráfego de rede em tempo real e geração de eventos estruturados (eve.json).
+2. **ThreatFox API (Abuse.ch):** Fonte de CTI para ingestão contínua de Indicadores de Comprometimento (IoCs), focada em botnets e malwares.
+3. **Motor de Correlação (Python):** Script analítico baseado em Pandas que cruza o tráfego interceptado pelo Suricata com a base de IoCs da ThreatFox.
+4. **Zabbix (Docker):** Plataforma de monitoramento que recebe os alertas validados e os disponibiliza em um dashboard executivo via Zabbix Agent.
 
-##Tecnologias Utilizadas
+## Stack Tecnológico
 
-* **Linguagem:** Python 3 (Pandas, Requests, Python-dotenv)
-* **Segurança de Rede:** Suricata IDS
-* **Monitoramento & SIEM:** Zabbix (Server, Web, Agent)
-* **Infraestrutura:** Docker & Docker Compose
-* **Threat Intelligence:** API ThreatFox (Abuse.ch STIX/JSON)
+* Python 3 (Pandas, Requests, Python-dotenv)
+* Suricata IDS
+* Zabbix (Server, Web, Agent)
+* Docker & Docker Compose
 
 ## Pré-requisitos
 
-Para rodar este laboratório na sua máquina local, você precisará de:
-* [Python 3.x](https://www.python.org/) instalado.
-* [Docker e Docker Compose](https://www.docker.com/) rodando na máquina.
-* [Suricata](https://suricata.io/) instalado e configurado para a sua placa de rede.
-* Uma chave de API gratuita da [ThreatFox](https://threatfox.abuse.ch/).
+* Python 3.x
+* Docker e Docker Compose
+* Suricata instalado e configurado para a interface de rede em uso
+* Chave de API ativa da ThreatFox
 
-##Como Configurar e Executar
+## Instruções de Uso
 
-### 1. Clonar o Repositório e Preparar o Ambiente Python
+### 1. Preparação do Ambiente
+
+Clone o repositório e configure o ambiente virtual:
+
 ```bash
 git clone [https://github.com/SEU_USUARIO/SEU_REPOSITORIO.git](https://github.com/SEU_USUARIO/SEU_REPOSITORIO.git)
 cd SEU_REPOSITORIO
 
-# Criar e ativar o ambiente virtual (Windows)
+# Criação e ativação do ambiente virtual (Windows)
 python -m venv venv
 .\venv\Scripts\activate
 
-# Instalar as dependências
+# Instalação das dependências
 pip install -r requirements.txt
+```
+2. Configuração de Credenciais
+Crie um arquivo .env no diretório raiz do projeto e insira as credenciais de API:
+```bash
+Snippet de código
+THREATFOX_API_KEY=sua_chave_de_api_aqui
+```
+3. Execução da Infraestrutura
+Provisione o servidor Zabbix e o banco de dados via Docker:
+
+```bash
+docker-compose up -d
+```
+Nota: Acesse a interface web do Zabbix (http://localhost:8080) e adicione o host local apontando para o IP da máquina na porta 10050.
+
+4. Inicialização do Pipeline
+Com o Suricata em execução na máquina local (gerando o arquivo eve.json), inicie o motor de correlação:
+```bash
+python correlacionador.py
+```
+O sistema passará a inspecionar os pacotes e reportar correspondências com os IoCs diretamente para o servidor Zabbix.
+
+Segurança e Boas Práticas
+Arquivos sensíveis e de volume local estão excluídos do versionamento via .gitignore. Isso inclui:
+
+Credenciais de API (.env)
+
+Ambiente virtual Python (venv/)
+
+Logs de tráfego de rede (*.log, eve.json)
+
+Próximos Passos (Roadmap)
+[ ] Integração de script para bloqueio automatizado de IPs no Firewall local (Windows Defender/Iptables).
+
+[ ] Suporte à ingestão de regras YARA personalizadas.
