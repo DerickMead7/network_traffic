@@ -1,79 +1,146 @@
 # SOC Pipeline Lab: Suricata, ThreatFox & Zabbix
+Laboratório de **Security Operations Center (SOC)** que detecta, em tempo real, comunicações de rede suspeitas cruzando o tráfego capturado pelo **Suricata** com indicadores de comprometimento (IoCs) da **ThreatFox**, e envia os alertas validados para um dashboard no **Zabbix**.
 
-Este repositório contém a implementação de um laboratório de Security Operations Center (SOC) focado em monitoramento de rede, ingestão de Cyber Threat Intelligence (CTI) e geração de alertas em tempo real.
+> Projeto de estudo, criado para praticar monitoração de rede, Cyber Threat Intelligence (CTI) e automação de detecção com Python.
 
-## Arquitetura do Projeto
+---
 
-O pipeline de detecção atua ponta a ponta e é composto por quatro camadas principais:
+## Como funciona
 
-1. **Suricata (Network IDS):** Monitoramento de tráfego de rede em tempo real e geração de eventos estruturados (eve.json).
-2. **ThreatFox API (Abuse.ch):** Fonte de CTI para ingestão contínua de Indicadores de Comprometimento (IoCs), focada em botnets e malwares.
-3. **Motor de Correlação (Python):** Script analítico baseado em Pandas que cruza o tráfego interceptado pelo Suricata com a base de IoCs da ThreatFox.
-4. **Zabbix (Docker):** Plataforma de monitoramento que recebe os alertas validados e os disponibiliza em um dashboard executivo via Zabbix Agent.
+```mermaid
+flowchart LR
+    A["Tráfego de rede"] --> B["Suricata (IDS)"]
+    B --> C["eve.json (eventos)"]
+    D["ThreatFox API (abuse.ch)"] --> E["IoCs: botnets e malwares"]
+    C --> F["Motor de correlação<br/>Python + Pandas"]
+    E --> F
+    F -->|"correspondência encontrada"| G["Zabbix (Docker)"]
+    G --> H["Dashboard de alertas"]
+```
 
-## Stack Tecnológico
+| Camada | Ferramenta | Função |
+|---|---|---|
+| Detecção | Suricata | Monitora o tráfego em tempo real e gera eventos estruturados em `eve.json` |
+| Inteligência | ThreatFox (abuse.ch) | Fornece IoCs atualizados, com foco em botnets e malwares |
+| Correlação | Python + Pandas | Cruza os eventos do Suricata com os IoCs e identifica correspondências |
+| Alertas | Zabbix (Server, Web e Agent via Docker) | Recebe os alertas validados e os exibe em um dashboard |
 
-* Python 3 (Pandas, Requests, Python-dotenv)
-* Suricata IDS
-* Zabbix (Server, Web, Agent)
-* Docker & Docker Compose
+---
+
+## Estrutura do repositório
+
+| Arquivo | Descrição |
+|---|---|
+| `correlact.py` | Motor de correlação entre eventos do Suricata e IoCs da ThreatFox |
+| `extractor.py` | Extração e tratamento dos dados de entrada |
+| `stix_collector.py` |  Coleta de indicadores em formato STIX |
+| `docker-compose.yml` | Sobe o Zabbix (Server, Web e banco de dados) |
+| `requirements.txt` | Dependências Python |
+| `.gitignore` | Exclui credenciais, ambiente virtual e logs do versionamento |
+
+---
+
+## Stack
+
+- **Python 3**: Pandas, Requests, python-dotenv
+- **Suricata**: IDS de rede
+- **Zabbix**: Server, Web e Agent
+- **Docker e Docker Compose**
+
+---
 
 ## Pré-requisitos
 
-* Python 3.x
-* Docker e Docker Compose
-* Suricata instalado e configurado para a interface de rede em uso
-* Chave de API ativa da ThreatFox
+- Python 3.x
+- Docker e Docker Compose
+- Suricata instalado e configurado para a interface de rede em uso (gerando o `eve.json`)
+- Chave de API da ThreatFox (gratuita, emitida pelo [abuse.ch](https://abuse.ch/))
 
-## Instruções de Uso
+---
 
-### 1. Preparação do Ambiente
+## Instalação e uso
 
-Clone o repositório e configure o ambiente virtual:
+### 1. Clonar o repositório e preparar o ambiente
 
 ```bash
-git clone [https://github.com/SEU_USUARIO/SEU_REPOSITORIO.git](https://github.com/SEU_USUARIO/SEU_REPOSITORIO.git)
-cd SEU_REPOSITORIO
+git clone https://github.com/DerickMead7/network_traffic.git
+cd network_traffic
+```
 
-# Criação e ativação do ambiente virtual (Windows)
+Crie e ative o ambiente virtual:
+
+```bash
+# Windows
 python -m venv venv
 .\venv\Scripts\activate
 
-# Instalação das dependências
+# Linux / macOS
+python3 -m venv venv
+source venv/bin/activate
+```
+
+Instale as dependências:
+
+```bash
 pip install -r requirements.txt
 ```
-2. Configuração de Credenciais
-Crie um arquivo .env no diretório raiz do projeto e insira as credenciais de API:
-```bash
-Snippet de código
+
+### 2. Configurar as credenciais
+
+Crie um arquivo `.env` na raiz do projeto:
+
+```env
 THREATFOX_API_KEY=sua_chave_de_api_aqui
 ```
-3. Execução da Infraestrutura
-Provisione o servidor Zabbix e o banco de dados via Docker:
+
+### 3. Subir o Zabbix
 
 ```bash
 docker-compose up -d
 ```
-Nota: Acesse a interface web do Zabbix (http://localhost:8080) e adicione o host local apontando para o IP da máquina na porta 10050.
 
-4. Inicialização do Pipeline
-Com o Suricata em execução na máquina local (gerando o arquivo eve.json), inicie o motor de correlação:
+Depois acesse a interface web em <http://localhost:8080> e adicione o host local apontando para o IP da máquina na porta `10050` (Zabbix Agent).
+
+> **Atenção:** altere a senha padrão do Zabbix no primeiro acesso.
+
+### 4. Executar o pipeline
+
+Com o Suricata rodando e gerando o `eve.json`, inicie o motor de correlação:
+
 ```bash
-python correlacionador.py
+python correlact.py
 ```
-O sistema passará a inspecionar os pacotes e reportar correspondências com os IoCs diretamente para o servidor Zabbix.
 
-Segurança e Boas Práticas
-Arquivos sensíveis e de volume local estão excluídos do versionamento via .gitignore. Isso inclui:
+A partir daí, o script inspeciona os eventos e reporta ao Zabbix toda correspondência com os IoCs.
 
-Credenciais de API (.env)
+---
 
-Ambiente virtual Python (venv/)
+## Segurança e boas práticas
 
-Logs de tráfego de rede (*.log, eve.json)
+Os itens abaixo ficam fora do versionamento (via `.gitignore`):
 
-Próximos Passos (Roadmap)
+- Credenciais de API (`.env`)
+- Ambiente virtual Python (`venv/`)
+- Logs de tráfego de rede (`*.log`, `eve.json`)
 
-[ ] Integração de script para bloqueio automatizado de IPs no Firewall local (Windows Defender/Iptables).
+Nunca publique a chave da ThreatFox nem logs de tráfego real, que podem conter endereços internos.
 
-[ ] Suporte à ingestão de regras YARA personalizadas.
+---
+
+## Roadmap
+
+- [ ] Bloqueio automatizado de IPs maliciosos no firewall local (Windows Defender / iptables)
+- [ ] Suporte à ingestão de regras YARA personalizadas
+
+---
+
+## Competências praticadas
+
+Monitoração de rede com IDS, ingestão e uso de Cyber Threat Intelligence (IoCs), correlação de eventos com Python/Pandas, integração com plataforma de monitoração (Zabbix) e infraestrutura como código com Docker Compose.
+
+---
+
+## Autor
+
+**Derick**: estudante de Cibersegurança, interessado em SOC, automação e segurança de redes.
+[GitHub](https://github.com/DerickMead7)
