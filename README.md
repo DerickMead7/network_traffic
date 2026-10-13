@@ -73,6 +73,7 @@ Ambiente virtual Python (venv/)
 Logs de tráfego de rede (*.log, eve.json)
 
 Próximos Passos (Roadmap)
+
 [ ] Integração de script para bloqueio automatizado de IPs no Firewall local (Windows Defender/Iptables).
 
 [ ] Suporte à ingestão de regras YARA personalizadas.
