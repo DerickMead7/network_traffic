@@ -19,7 +19,7 @@ O pipeline funciona de ponta a ponta cruzando tráfego local com indicadores de 
 * **Infraestrutura:** Docker & Docker Compose
 * **Threat Intelligence:** API ThreatFox (Abuse.ch STIX/JSON)
 
-## ⚙️ Pré-requisitos
+## Pré-requisitos
 
 Para rodar este laboratório na sua máquina local, você precisará de:
 * [Python 3.x](https://www.python.org/) instalado.
